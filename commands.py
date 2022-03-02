@@ -233,6 +233,7 @@ def main(argv=None):  # IGNORE:C0111
             parser.add_argument('-n','--num_threads', nargs='?', const=1, type=int,help="Number of parallel uploads while uploading a directory")
             parser.add_argument('-e','--encrypt', action='store_true', help="Encrypt files in a dir bevor upload. Only if upload directory. You need a key file and the encrypted File gets stored in a temporary directory.")
             parser.add_argument('-k','--keyFile', nargs='?', help="KeyFile for encryption")
+            parser.add_argument('-t','--tempDir', nargs='?', help="Temporary directory for encrypted files")
 
             parser.add_argument('local', help='The file/folder/path to put')
             parser.add_argument('remote', nargs='?', help='The remote folder to put it in')
@@ -240,9 +241,9 @@ def main(argv=None):  # IGNORE:C0111
             args = parser.parse_args()
             if args.config:
                 degoo.api.report_config()
-            if not args.num_thread:
+            if not args.num_threads:
                 num_threads = 1 
-            else: num_threads = args.num_thread
+            else: num_threads = args.num_threads
             if not args.tempDir:
                 tempdir ="/tmp"
             else: tempdir = args.tempDir
