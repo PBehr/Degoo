@@ -26,6 +26,7 @@ from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
 from .API import API
 from .lib import ddd, split_path, absolute_remote_path
+from .crypt import encrypt, load_key
 
 ###########################################################################
 # Get the path to user configuration diectory for this app
@@ -911,15 +912,15 @@ def get(remote_path, local_directory=None, verbose=0, if_missing=False, dry_run=
     else:
         return get_file(item['ID'], local_directory, verbose, if_missing, dry_run, schedule)
 
-def start_queue(num_workers):
+def start_queue(num_workers,deleteonFinish=False):
     q = queue.Queue()
     for i in range(num_workers):
-        worker = threading.Thread(target=worker_func, args=(q, i,), daemon=True)
+        worker = threading.Thread(target=worker_func, args=(q, i,deleteonFinish), daemon=True)
         worker.start()
     return (q)
     
     
-def worker_func(q, thread_no):
+def worker_func(q, thread_no,deleteonFinish=False):
     while True:
         task = q.get()
         for i in range(3):        
@@ -934,6 +935,8 @@ def worker_func(q, thread_no):
                     break
                 continue 
         q.task_done()
+        if deleteonFinish:
+            os.remove(task[0])
         print(f'Thread #{thread_no} is done uploading {os.path.basename(task[0])}. #{q.qsize()} tasks left ')
     
 
@@ -1179,6 +1182,15 @@ def put_directory(local_directory, remote_folder, verbose=0, if_changed=False, d
 
     :returns: A tuple containing the Degoo ID and the Remote file path
     '''
+    #### Encryption 
+    encryptFile = True ##Durch argument ersetzen
+    tempDir="/tmp"
+    keyFile="/home/speaker/Degoo/key.key"
+    deleteonFinish=False
+    if encryptFile:
+        deleteonFinish=True
+        key = load_key(keyFile)
+
     IDs = {}
     format = "%(asctime)s: %(message)s"
 
@@ -1186,7 +1198,8 @@ def put_directory(local_directory, remote_folder, verbose=0, if_changed=False, d
 
                         datefmt="%H:%M:%S")
     
-    q = start_queue(num_threads)
+    q = start_queue(num_threads,deleteonFinish)
+
 
     target_dir = get_dir(remote_folder)
     (target_junk, target_name) = os.path.split(local_directory)
@@ -1212,6 +1225,10 @@ def put_directory(local_directory, remote_folder, verbose=0, if_changed=False, d
 
         for name in files:
             Name = os.path.join(root, name)
+            tmpFile= os.path.join(tempDir,name)
+            if encryptFile:
+                encrypt(Name,key,outFile=tmpFile)
+                Name = tmpFile
             if num_threads == 1: ## Enable or disable Progressbar 
                 q.put([Name, IDs[root], verbose, if_changed, dry_run, schedule,True])
             else:
