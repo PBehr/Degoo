@@ -231,14 +231,22 @@ def main(argv=None):  # IGNORE:C0111
             parser.add_argument('-f', '--force', action='store_true', help="Force uploads, else only upload if changed.")
             parser.add_argument('-s', '--scheduled', action='store_true', help="Upload only when the configured schedule allows.")
             parser.add_argument('-n','--num_threads', nargs='?', const=1, type=int,help="Number of parallel uploads while uploading a directory")
+            parser.add_argument('-e','--encrypt', action='store_true', help="Encrypt files in a dir bevor upload. Only if upload directory. You need a key file and the encrypted File gets stored in a temporary directory.")
+            parser.add_argument('-k','--keyFile', nargs='?', help="KeyFile for encryption")
+
             parser.add_argument('local', help='The file/folder/path to put')
             parser.add_argument('remote', nargs='?', help='The remote folder to put it in')
+            #encryptFile=False,keyFile="",tempDir="/tmp"
             args = parser.parse_args()
             if args.config:
                 degoo.api.report_config()
-
-            result = degoo.put(args.local, args.remote, args.verbose, not args.force, args.dryrun, args.scheduled,args.num_threads)
-
+            if not args.num_thread:
+                num_threads = 1 
+            else: num_threads = args.num_thread
+            if not args.tempDir:
+                tempdir ="/tmp"
+            else: tempdir = args.tempDir
+            result = degoo.put(args.local, args.remote, args.verbose, not args.force, args.dryrun, args.scheduled,num_threads,args.encrypt,args.keyFile,tempdir)
             if not args.dryrun:
                 if len(result) == 3:
                     ID, Path, URL = result

@@ -1169,7 +1169,9 @@ def put_file(local_file, remote_folder, verbose=0, if_changed=False, dry_run=Fal
         return (ID, Path, URL)
 
 
-def put_directory(local_directory, remote_folder, verbose=0, if_changed=False, dry_run=False, schedule=False,num_threads=1):
+def put_directory(local_directory, 
+                    remote_folder, verbose=0, if_changed=False, dry_run=False, 
+                    schedule=False,num_threads=1,encryptFile=False,keyFile="",tempDir="/tmp"):
     '''
     Uploads a local directory recursively to the Degoo cloud store.
 
@@ -1183,12 +1185,10 @@ def put_directory(local_directory, remote_folder, verbose=0, if_changed=False, d
     :returns: A tuple containing the Degoo ID and the Remote file path
     '''
     #### Encryption 
-    encryptFile = True ##Durch argument ersetzen
-    tempDir="/tmp"
-    keyFile="/home/speaker/Degoo/key.key"
     deleteonFinish=False
     if encryptFile:
         deleteonFinish=True
+        assert keyFile, "You need to specify a keyfile" 
         key = load_key(keyFile)
 
     IDs = {}
@@ -1239,7 +1239,7 @@ def put_directory(local_directory, remote_folder, verbose=0, if_changed=False, d
     return (IDs[Root], target_dir["Path"])
 
 
-def put(local_path, remote_folder, verbose=0, if_changed=False, dry_run=False, schedule=False,num_threads=1):
+def put(local_path, remote_folder, verbose=0, if_changed=False, dry_run=False, schedule=False,num_threads=1,encryptFile=False,keyFile="",tempDir="/tmp"):
     '''
     Uplads a file or folder to the Degoo cloud store
 
@@ -1253,7 +1253,7 @@ def put(local_path, remote_folder, verbose=0, if_changed=False, dry_run=False, s
     isDirectory = os.path.isdir(local_path)
 
     if isDirectory:
-        return put_directory(local_path, remote_folder, verbose, if_changed, dry_run, schedule,num_threads)
+        return put_directory(local_path, remote_folder, verbose, if_changed, dry_run, schedule,num_threads,encryptFile,keyFile,tempDir)
     elif isFile:
         return put_file(local_path, remote_folder, verbose, if_changed, dry_run, schedule)
     else:
