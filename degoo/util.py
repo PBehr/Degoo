@@ -27,7 +27,7 @@ from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 from .API import API
 from .lib import ddd, split_path, absolute_remote_path
 from .crypt import encrypt, load_key
-
+from .streaming_aead import encrypt_or_decrypt_file
 ###########################################################################
 # Get the path to user configuration diectory for this app
 conf_dir = user_config_dir("degoo")
@@ -1228,7 +1228,8 @@ def put_directory(local_directory,
             Name = os.path.join(root, name)
             tmpFile= os.path.join(tempDir,name)
             if encryptFile:
-                encrypt(Name,key,outFile=tmpFile)
+                #encrypt(Name,key,outFile=tmpFile)
+                encrypt_or_decrypt_file(Name,keyFile,tmpFile)
                 Name = tmpFile
             if num_threads == 1: ## Enable or disable Progressbar 
                 q.put([Name, IDs[root], verbose, if_changed, dry_run, schedule,True])
