@@ -265,6 +265,7 @@ class API:
 
         # Finally, Degoo base64 encode is cehcksum.
         checksum = base64.b64encode(bytes(CS)).decode()
+        ## Test URLsave base64.urlsafe_b64encode(os.urandom(32))
 
         return  checksum
 
