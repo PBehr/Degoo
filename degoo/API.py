@@ -11,6 +11,7 @@ import hashlib
 import base64
 import humanize
 import requests
+import jwt
 
 from requests import Request, Session
 from shutil import copyfile
@@ -28,7 +29,7 @@ class API:
 
     # The URLS used for logging in
     URL_login = "https://rest-api.degoo.com/login"
-
+    URL_ACCESS_TOKEN = "https://rest-api.degoo.com/access-token"
     ###########################################################################
     # Local files configuration
     #
@@ -47,7 +48,7 @@ class API:
     # The USER Agent to use on web requests. Degoo can be quite picky about
     # this rejecting attempts to connect or interact if it's wrong. A point
     # of weakness in the API.
-    USER_AGENT = 'Degoo-client/0.3'
+    USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36'
 
     ###########################################################################
     # Empirically determined, largest value degoo supports for the Limit
@@ -485,7 +486,7 @@ class API:
 
         request = { "operationName": "GetOverlay3",
                     "variables": {
-                        "Token": self.KEYS["Token"],
+                        "Token": self._get_token(),
                         "ID": {"FileID": degoo_id}
                         },
                     "query": query
@@ -560,7 +561,7 @@ class API:
 
         request = { "operationName": "GetFileChildren3",
                     "variables": {
-                        "Token": self.KEYS["Token"],
+                        "Token": self._get_token(),
                         "ParentID": f"{dir_id}",
                         "Limit": self.LIMIT_MAX,
                         "Order": 3
@@ -659,7 +660,7 @@ class API:
 
         request = { "operationName": "GetFilesFromPaths",
                     "variables": {
-                        "Token": self.KEYS["Token"],
+                        "Token": self._get_token(),
                         "FileIDPaths": [{
                             "DeviceID": device_id,
                             "Path": path,
@@ -709,7 +710,7 @@ class API:
 
         request = { "operationName": "SetDeleteFile5",
                     "variables": {
-                        "Token": self.KEYS["Token"],
+                        "Token": self._get_token(),
                         "IDs": [{ "FileID": degoo_id }],
                         "IsInRecycleBin": False,
                         },
@@ -748,7 +749,7 @@ class API:
 
         request = {"operationName": "SetRenameFile",
                    "variables": {
-                       "Token": self.KEYS["Token"],
+                       "Token": self._get_token(),
                        "FileRenames": [{
                            "ID": file_id,
                            "NewName": new_name
@@ -790,7 +791,7 @@ class API:
 
         request = {"operationName": "SetMoveFile",
                    "variables": {
-                       "Token": self.KEYS["Token"],
+                       "Token": self._get_token(),
                        "NewParentID": new_parent_id,
                        "FileIDs": [
                            file_id
@@ -818,7 +819,36 @@ class API:
                 raise self.Error(f"setMoveFile failed with unknwon reasons: {rd}")
         else:
             raise self.Error(f"setMoveFile failed with: {response}")
+    def _get_token(self):
+        expired_time = 0
+        if self.KEYS["Token"] and self.KEYS["RefreshToken"]:
+            deserialized = jwt.decode(
+                self.KEYS["Token"],
+                options={
+                    "verify_signature": False,
+                    "verify_aud": False,
+                    "verify_exp": False,
+                    "verify_nbf": False})
+            expired_time = deserialized['exp']
+        else:
+            print('Token and/or refresh token does not found. Login with Degoo')
+            login()
 
+        if datetime.datetime.today().timestamp() > expired_time:
+            print('Token expired. Refreshing')
+            data = {'refreshtoken': self.KEYS["RefreshToken"]}
+            response = requests.post(self.URL_ACCESS_TOKEN, data=json.dumps(data))
+
+            if response.ok:
+                rd = json.loads(response.text)
+
+                keys = {"Token": rd["AccessToken"], "RefreshToken": self.KEYS["RefreshToken"], "x-api-key": api.API_KEY}
+                self.KEYS["Token"] = keys["Token"]
+
+                with open(keys_file, "w") as file:
+                    file.write(json.dumps(keys))
+
+        return self.KEYS["Token"]
     def setUploadFile3(self, name, parent_id, size="0", checksum="CgAQAg"):
         '''
         A Degoo Graph API call: Appears to create a file in the Degoo filesystem.
@@ -853,7 +883,7 @@ class API:
         # to provide the checksum.
         request = { "operationName": "SetUploadFile3",
                     "variables": {
-                        "Token": self.KEYS["Token"],
+                        "Token": self._get_token(),
                         "FileInfos": [{
                             "Checksum": checksum,
                             "Name": name,
@@ -912,7 +942,7 @@ class API:
 
         request = { "operationName": "GetBucketWriteAuth4",
                     "variables": {
-                        "Token": self.KEYS["Token"],
+                        "Token": self._get_token(),
                         "ParentID": f"{dir_id}",
                         "StorageUploadInfos":[]
                         },
