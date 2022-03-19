@@ -26,8 +26,9 @@ from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
 
 from .API import API
 from .lib import ddd, split_path, absolute_remote_path
-from .crypt import encrypt, load_key
-from .streaming_aead import encrypt_or_decrypt_file
+from .fernet_stream import encrypt_or_decrypt_file
+#from .crypt import encrypt, load_key ## not streaming whole File in Memory
+#from .streaming_aead import encrypt_or_decrypt_file ### Tink
 ###########################################################################
 # Get the path to user configuration diectory for this app
 conf_dir = user_config_dir("degoo")
@@ -1189,7 +1190,7 @@ def put_directory(local_directory,
     if encryptFile:
         deleteonFinish=True
         assert keyFile, "You need to specify a keyfile" 
-        key = load_key(keyFile)
+        #key = load_key(keyFile)
 
     IDs = {}
     format = "%(asctime)s: %(message)s"

@@ -186,3 +186,6 @@ d
 degoo_config
 key.key
 keyset.key
+/git
+/degoo/playwright_test.py
+/.vscode/settings.json
