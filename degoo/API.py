@@ -842,7 +842,7 @@ class API:
             if response.ok:
                 rd = json.loads(response.text)
 
-                keys = {"Token": rd["AccessToken"], "RefreshToken": self.KEYS["RefreshToken"], "x-api-key": api.API_KEY}
+                keys = {"Token": rd["AccessToken"], "RefreshToken": self.KEYS["RefreshToken"], "x-api-key": self.API_KEY}
                 self.KEYS["Token"] = keys["Token"]
 
                 with open(keys_file, "w") as file:
