@@ -845,7 +845,7 @@ class API:
                 keys = {"Token": rd["AccessToken"], "RefreshToken": self.KEYS["RefreshToken"], "x-api-key": self.API_KEY}
                 self.KEYS["Token"] = keys["Token"]
 
-                with open(keys_file, "w") as file:
+                with open(self.keys_file, "w") as file:
                     file.write(json.dumps(keys))
 
         return self.KEYS["Token"]
